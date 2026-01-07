@@ -1,84 +1,111 @@
 # Rock-Paper-Scissors-Bomb AI Game Referee
 
-This project implements a conversational AI bot for a **Rock-Paper-Scissors-Bomb** game using **Google ADK**. The bot enforces rules, tracks state, and provides meaningful feedback to the user for a 3-round game.
+This project implements a conversational AI bot to referee a game of **Rock-Paper-Scissors-Bomb** in Python. The bot enforces game rules, validates user inputs, tracks the state of the game, and provides dynamic responses. The game is played over 3 rounds, with each round providing detailed feedback and a final result at the end.
 
 ---
 
 ## State Model
-The game state is encapsulated in the `GameState` class, which ensures the state persists across rounds. The state tracks:
+The game state is managed using the `GameState` class, which tracks:
 - **`round_count`**: The current round number (1–3).
-- **`user_score`**: Total rounds won by the user.
+- **`user_score`**: Total rounds won by the player.
 - **`bot_score`**: Total rounds won by the bot.
-- **`user_bomb_used`**: A boolean indicating if the user has used their "bomb" move.
-- **`bot_bomb_used`**: A boolean indicating if the bot has used its "bomb" move.
+- **`user_bomb_used`**: Tracks whether the user has already used the "bomb" move.
+- **`bot_bomb_used`**: Tracks whether the bot has already used the "bomb" move.
 
-The state is serialized to and from a dictionary using `to_dict` and `from_dict`, ensuring easy integration with tools. This separation enables clean state management and tool interaction.
-
----
-
-## Agent and Tool Design
-The solution follows Google's ADK model with a clean separation of functionality:
-1. **Agent (`GameRefereeBot`)**:
-   - Orchestrates the game flow, manages the state, and generates user-friendly responses.
-   - Handles intent understanding, tool execution, and response generation.
-   - Manages round-by-round dynamics, including validating inputs, resolving rounds, and ending the game gracefully.
-
-2. **Tools**:
-   - **`ValidateMoveTool`**:
-     - Validates the user's move.
-     - Ensures invalid moves (e.g., empty or unsupported inputs) are rejected with clear feedback.
-     - Enforces that the "bomb" move can only be used once per game.
-   - **`ResolveRoundTool`**:
-     - Determines the winner of the round based on the game's rules.
-     - Updates game scores and tracks bomb usage.
-     - Advances the round number.
-
-This design ensures strict state manipulation rules via tools and promotes modularity.
+This design ensures that the state persists across rounds and enforces the game rules.
 
 ---
 
-## Tradeoffs
-### Design Choices
-1. **Tool Abstraction**:
-   - Validation (`ValidateMoveTool`) and logic resolution (`ResolveRoundTool`) were implemented as separate tools to achieve modularity.
-   - This added slight overhead in communication between the agent and tools but improved extensibility and maintainability.
-2. **CLI Simplicity**:
-   - The command-line interface (CLI) was chosen over more complex UI frameworks to align with the scope and technical constraints (e.g., no long-running servers or databases).
+## Design Overview
+The code is structured into three main components for clarity and modularity:
 
-### Tradeoffs
-- **AI Bot Intelligence**:
-  - The bot's move generation relies on a 50% chance of using a "bomb" if available, followed by a random selection. This is simple but less strategic.
-  - A smarter move simulation (e.g., estimating user behavior based on prior moves) was deprioritized in favor of simplicity.
-- **High Configurability vs. Minimalism**:
-  - The game logic was hardcoded for the "best of 3" format and specific rules, ensuring clarity but sacrificing flexibility for other configurations (e.g., adjustable rounds).
+### 1. Game Referee
+The **`GameRefereeBot`** manages the game flow and orchestrates the interaction between the tools and the game state. It:
+- Prompts the user for input.
+- Generates the bot’s move in each round.
+- Provides clear, structured responses about the current round and overall game results.
+
+### 2. Validate Move Tool
+The **`ValidateMoveTool`** ensures user inputs are valid. It:
+- Checks if the user’s move is one of the valid choices: `rock`, `paper`, `scissors`, `bomb`.
+- Enforces the rule that the "bomb" move may only be used once per game.
+
+If the move is invalid, it provides feedback to the user without proceeding to the next round.
+
+### 3. Resolve Round Tool
+The **`ResolveRoundTool`** determines the outcome of each round. It:
+- Compares the user’s move and the bot’s move according to the game rules.
+- Updates the scores based on the result (win, lose, or draw).
+- Tracks whether the "bomb" move was used during the round.
+- Advances the round count.
 
 ---
 
-## Potential Improvements
-With more time, the following enhancements could be made:
-1. **AI Strategy**:
-   - Implement a more intelligent bot strategy for move selection, potentially using heuristics or weighted probabilities to provide more engaging gameplay.
-2. **State Persistence**:
-   - Add support for saving and loading game progress in-memory (e.g., using JSON files), while still avoiding external databases per the constraints.
-3. **Comprehensive Testing**:
-   - Add unit tests and integration tests to ensure edge-case handling (e.g., invalid inputs, simultaneous bombs).
-4. **User Behavior Analysis**:
-   - Track user moves across rounds to predict future moves, which would make the bot seem more adaptive and "intelligent."
-5. **Dynamic Configuration**:
-   - Allow users to set custom game configurations, such as the number of rounds or move probability for the bot.
-6. **Enhanced Responses**:
-   - Improve response generation with richer language and optional humor (e.g., playful responses to invalid inputs).
+## Game Rules
+- The game is played for 3 rounds.
+- Valid moves:
+  - `rock`
+  - `paper`
+  - `scissors`
+  - `bomb` (can be used only once per player)
+- Winning conditions:
+  - `rock` beats `scissors`
+  - `paper` beats `rock`
+  - `scissors` beats `paper`
+  - `bomb` beats all other moves, but if both players use "bomb" in the same round, it results in a draw.
+- Invalid inputs:
+  - If the user enters an invalid input, the bot provides feedback, and the round must be replayed.
+
+---
+
+## Code Features
+- **Round-by-Round Feedback**:
+  - Round number, moves played, and round winner are clearly displayed.
+  - Display of the current score after each round.
+- **Final Results**:
+  - The game ends automatically after 3 rounds.
+  - The final result declares the winner (`User Wins`, `Bot Wins`) or a tie (`Draw`).
+- **Bot AI**:
+  - The bot’s moves include a 50% chance of using "bomb" if it is still available.
+  - Otherwise, it chooses randomly from `rock`, `paper`, or `scissors`.
+
+---
+
+## Improvements Made in the Refactored Design
+1. **Separation of Concerns**:
+   - Tools are used for specific tasks (validation and resolving rounds), keeping the design modular and easy to maintain.
+2. **Clean State Management**:
+   - The `GameState` class tracks dynamic game data, ensuring persistent and accurate game rules.
+3. **User-Focused Gameplay**:
+   - Clear feedback is provided for both invalid inputs and results after each round, improving player experience.
+
+---
+
+## Potential Enhancements
+Given more time, the following improvements could enhance the game:
+1. **Smarter Bot AI**:
+   - Add heuristics or probability-based decision-making to make the bot more challenging.
+2. **Game Customization**:
+   - Allow users to configure the number of rounds or introduce new moves into the game.
+3. **Session Persistence**:
+   - Save the game progress to a file (e.g., JSON format) for reloading and resuming games.
+4. **Testing**:
+   - Add automated unit tests to handle edge cases such as invalid inputs and simultaneous "bomb" usage.
 
 ---
 
 ## How to Play
-1. Run the game:
+1. **Run the game**:
    ```bash
-   python rock_paper_scissors_bomb_game.py
+   python rock_paper_scissors_bomb.py
    ```
-2. Follow the prompts to input your moves (`rock`, `paper`, `scissors`, `bomb`).
-3. The game provides:
-   - Round-by-round outcomes with round number, moves played, and the winner.
-   - Final results (user wins, bot wins, or a draw).
+2. **Follow the prompts** to enter your move in each round:
+   - Valid inputs: `rock`, `paper`, `scissors`, `bomb`.
+   - If you use "bomb," it can only be used *once* during the game.
+3. **Game Workflow**:
+   - The bot will respond with its move and the round result.
+   - The game ends after 3 rounds, and the final winner is declared.
+
+---
 
 Thank you for playing!
